@@ -588,11 +588,11 @@
                     style="margin-left:auto; width:150px"
             />
           </div>
-          <div
-                  style="margin-top:10px; margin-bottom:10px; display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;"
-          >
+            <div
+                    style="margin-top:10px; margin-bottom:10px; display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;"
+            >
             <div style="flex:1;min-width:180px">
-              <label class="small-muted">Customer</label>
+              <label class="small-muted">Select Customer</label>
               <select id="led-credit-cust" style="width:100%"></select>
             </div>
             <div style="width:140px">
@@ -637,6 +637,30 @@
               </table>
             </div>
           </div>
+          <div class="field">
+            <label>Select Customer</label>
+            <select id="ledger-cust-select"></select>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-sm" id="btn-print-cust-ledger"><i class="fa fa-print"></i> Print Ledger</button>
+          </div>
+          <div class="table-container reports-table-container hidden" id="ledger-cust-detail-container">
+            <div class="table-scroll">
+              <table class="table-tight">
+                <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th class="text-right">Debit</th>
+                  <th class="text-right">Credit</th>
+                  <th class="text-right">Balance</th>
+                </tr>
+                </thead>
+                <tbody id="ledger-cust-detail"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="ledger-detail-empty" id="ledger-cust-empty">Select a customer to view ledger.</div>
         </div>
 
         <!-- SUPPLIERS -->
@@ -653,11 +677,11 @@
             />
             <button class="btn btn-sm" id="btn-add-sup-ledger">+</button>
           </div>
-          <div
-                  style="margin-top:10px; margin-bottom:10px; display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;"
-          >
+            <div
+                    style="margin-top:10px; margin-bottom:10px; display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;"
+            >
             <div style="flex:1;min-width:180px">
-              <label class="small-muted">Supplier</label>
+              <label class="small-muted">Select Supplier</label>
               <select id="led-sup-select" style="width:100%"></select>
             </div>
             <div style="width:140px">
@@ -701,6 +725,30 @@
               </table>
             </div>
           </div>
+          <div class="field">
+            <label>Select Supplier</label>
+            <select id="ledger-sup-select"></select>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-sm" id="btn-print-sup-ledger"><i class="fa fa-print"></i> Print Ledger</button>
+          </div>
+          <div class="table-container reports-table-container hidden" id="ledger-sup-detail-container">
+            <div class="table-scroll">
+              <table class="table-tight">
+                <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Description</th>
+                  <th class="text-right">Debit</th>
+                  <th class="text-right">Credit</th>
+                  <th class="text-right">Balance</th>
+                </tr>
+                </thead>
+                <tbody id="ledger-sup-detail"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="ledger-detail-empty" id="ledger-sup-empty">Select a supplier to view ledger.</div>
         </div>
       </div>
     </div>
@@ -765,6 +813,10 @@
       >
         <h3>Banking & Accounts</h3>
         <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+          <div>
+            <label class="small-muted">Select Bank</label>
+            <select id="bank-view-select" style="width:180px;"></select>
+          </div>
           <button class="btn btn-primary" id="btn-add-bank">Add Bank</button>
           <button class="btn" id="btn-add-bank-tx">
             Add Bank Transaction

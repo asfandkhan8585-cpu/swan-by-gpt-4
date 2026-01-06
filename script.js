@@ -25,6 +25,7 @@ let cart = [];
 let purchaseCart = [];
 let customerDisplayOn = false;
 let currentBillIndex = -1;
+let lastDay = null;
 
 // INIT
 window.onload = function () {
@@ -75,7 +76,12 @@ function saveDB() {
 // CLOCK/THEME
 function updateClock() {
     const now = new Date();
+    const today = now.toISOString().slice(0, 10);
     document.getElementById("clock").innerText = now.toLocaleTimeString();
+    if (lastDay !== today) {
+        lastDay = today;
+        syncTodayDates(today);
+    }
     if (!document.getElementById("pos-date").value)
         document.getElementById("pos-date").valueAsDate = now;
     if (!document.getElementById("pur-date").value)
@@ -90,6 +96,38 @@ function updateClock() {
         document.getElementById("sp-date").valueAsDate = now;
     if (!document.getElementById("bt-date").value)
         document.getElementById("bt-date").valueAsDate = now;
+}
+
+function syncTodayDates(todayIso) {
+    const ids = [
+        "pos-date",
+        "pur-date",
+        "me-date",
+        "att-date",
+        "cp-date",
+        "sp-date",
+        "bt-date",
+        "rpt-start",
+        "rpt-end",
+        "exp-start",
+        "exp-end",
+        "bank-start",
+        "bank-end",
+        "led-rpt-start",
+        "led-rpt-end",
+        "led-sup-start",
+        "led-sup-end",
+        "att-rpt-start",
+        "att-rpt-end"
+    ];
+    ids.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) el.value = todayIso;
+    });
+    renderDash();
+    renderExpenses();
+    renderBankReport();
+    renderAttendanceSummary();
 }
 
 function setTheme(t) {
@@ -443,11 +481,14 @@ function renderPosItems() {
 
 function filterPosList() {
     const q = document.getElementById("pos-search").value.toLowerCase();
-    const res = db.items.filter(
-        (i) =>
-            i.name.toLowerCase().includes(q) ||
-            i.code.toLowerCase().includes(q)
-    );
+    const res = db.items
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .filter(
+            (i) =>
+                i.name.toLowerCase().includes(q) ||
+                i.code.toLowerCase().includes(q)
+        );
     const tb = document.getElementById("pos-search-body");
     tb.innerHTML = "";
 
@@ -572,6 +613,7 @@ function saveOrPrint(mode) {
     const cust = db.customers.find((c) => c.id === custId);
     const date = document.getElementById("pos-date").value;
     const payMode = document.getElementById("pos-mode").value;
+    const custType = cust ? cust.type : "";
     const sub = parseFloat(document.getElementById("pos-sub").innerText) || 0;
     const disc = parseFloat(document.getElementById("pos-disc").value) || 0;
     const taxPercent = parseFloat(document.getElementById("pos-tax").value) || 0;
@@ -579,6 +621,8 @@ function saveOrPrint(mode) {
     const taxAmt = sub * (taxPercent / 100) + fixedTax;
     const total = sub - disc + taxAmt + (parseFloat(document.getElementById("pos-svc").value) || 0);
     const remarks = document.getElementById("pos-rem").value;
+    const bankId = parseInt(document.getElementById("pos-bank").value || 0, 10);
+    const bank = db.banks.find((b) => b.id === bankId);
 
     let billProfit = 0;
     cart.forEach((c) => {
@@ -608,8 +652,6 @@ function saveOrPrint(mode) {
         receivedNow = total;
         remaining = 0;
         if (payMode === "Online") {
-            const bankId = parseInt(document.getElementById("pos-bank").value, 10);
-            const bank = db.banks.find((b) => b.id === bankId);
             if (bank) {
                 bank.bal += total;
                 db.bankTx.push({
@@ -628,6 +670,7 @@ function saveOrPrint(mode) {
         date,
         custId,
         custName: cust ? cust.name : "",
+        custType,
         items: JSON.parse(JSON.stringify(cart)),
         sub,
         disc,
@@ -636,11 +679,13 @@ function saveOrPrint(mode) {
         profit: billProfit,
         payMode,
         remarks,
+        bankName: bank ? bank.name : "",
         received: receivedNow,
         remaining
     };
 
     db.sales.push(sale);
+    currentBillIndex = db.sales.length - 1;
     saveDB();
 
     if (mode === "saveprint") {
@@ -676,6 +721,9 @@ function printBill(sale) {
       <hr>
       <h3>INVOICE #${sale.id}</h3>
       <p>Date: ${sale.date} | Cust: ${sale.custName}</p>
+      <p>Customer Type: ${sale.custType || ""}</p>
+      <p>Payment Mode: ${sale.payMode}${sale.bankName ? ` (${sale.bankName})` : ""}</p>
+      <p>Remarks: ${sale.remarks || "-"}</p>
     </div>
     <table class="print-table">
       <thead>
@@ -841,10 +889,13 @@ function recallBill() {
 // PURCHASES
 function filterPurchaseList() {
     const q = document.getElementById("pur-search").value.toLowerCase();
-    const res = db.items.filter(
-        (i) =>
-            i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q)
-    );
+    const res = db.items
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .filter(
+            (i) =>
+                i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q)
+        );
     const tb = document.getElementById("pur-search-body");
     tb.innerHTML = "";
     res.slice(0, 50).forEach((i) => {
@@ -930,6 +981,13 @@ function savePurchase() {
 
     if (sup) {
         sup.bal = (sup.bal || 0) + total;
+        db.transactions.push({
+            date,
+            type: "Supplier Purchase",
+            desc: `PO #${purchase.id}`,
+            amt: total,
+            relSupId: supId
+        });
     }
 
     saveDB();
@@ -940,16 +998,21 @@ function savePurchase() {
 }
 
 function printPurchaseReport() {
-    const data = db.purchases;
+    const supFilter = parseInt(document.getElementById("pur-sup").value || 0, 10);
+    const data = db.purchases.filter((p) => !supFilter || p.supId === supFilter);
     let sum = 0;
     const rows = data
         .map((p) => {
             sum += p.total;
+            const itemsText = (p.items || [])
+                .map((i) => `${i.name} x${i.qty} @${format(i.cost)} = ${format(i.qty * i.cost)}`)
+                .join(", ");
             return `
         <tr>
           <td>${p.date}</td>
           <td>${p.id}</td>
           <td>${p.supName}</td>
+          <td>${itemsText}</td>
           <td>${format(p.total)}</td>
         </tr>`;
         })
@@ -965,11 +1028,11 @@ function printPurchaseReport() {
     </div>
     <table class="print-table">
       <thead>
-        <tr><th>Date</th><th>PO #</th><th>Supplier</th><th>Total</th></tr>
+        <tr><th>Date</th><th>PO #</th><th>Supplier</th><th>Items</th><th>Total</th></tr>
       </thead>
       <tbody>${rows}</tbody>
       <tfoot>
-        <tr><th colspan="3">Grand Total</th><th>${format(sum)}</th></tr>
+        <tr><th colspan="4">Grand Total</th><th>${format(sum)}</th></tr>
       </tfoot>
     </table>
   `;
@@ -985,6 +1048,8 @@ function renderInv() {
     let totalValue = 0;
 
     db.items
+        .slice()
+        .sort((a, b) => a.name.localeCompare(b.name))
         .filter((i) => i.name.toLowerCase().includes(q) || i.code.toLowerCase().includes(q))
         .forEach((i) => {
             const value = i.cost * i.stock;
@@ -1396,6 +1461,11 @@ function renderSelectors() {
         cpSel.innerHTML = "";
         db.customers.forEach((c) => cpSel.add(new Option(c.name, c.id)));
     }
+    const ledgerCustSel = document.getElementById("ledger-cust-select");
+    if (ledgerCustSel) {
+        ledgerCustSel.innerHTML = "<option value=''>Select Customer</option>";
+        db.customers.forEach((c) => ledgerCustSel.add(new Option(c.name, c.id)));
+    }
     const supSel = document.getElementById("pur-sup");
     if (supSel) {
         supSel.innerHTML = "";
@@ -1405,6 +1475,11 @@ function renderSelectors() {
     if (ledSup) {
         ledSup.innerHTML = "";
         db.suppliers.forEach((s) => ledSup.add(new Option(s.name, s.id)));
+    }
+    const ledgerSupSel = document.getElementById("ledger-sup-select");
+    if (ledgerSupSel) {
+        ledgerSupSel.innerHTML = "<option value=''>Select Supplier</option>";
+        db.suppliers.forEach((s) => ledgerSupSel.add(new Option(s.name, s.id)));
     }
     const spSel = document.getElementById("sp-sup");
     if (spSel) {
@@ -1435,6 +1510,13 @@ function renderSelectors() {
     if (spBank) {
         spBank.innerHTML = "";
         db.banks.forEach((b) => spBank.add(new Option(b.name, b.id)));
+    }
+    const bankViewSel = document.getElementById("bank-view-select");
+    if (bankViewSel) {
+        const current = bankViewSel.value;
+        bankViewSel.innerHTML = "<option value=''>Select bank</option>";
+        db.banks.forEach((b) => bankViewSel.add(new Option(b.name, b.id)));
+        if (current) bankViewSel.value = current;
     }
 }
 
@@ -1472,19 +1554,29 @@ function renderBanks() {
     const tb = document.getElementById("bank-body");
     if (!tb) return;
     tb.innerHTML = "";
-    let sum = 0;
-    db.banks.forEach((b) => {
-        sum += b.bal;
+    const viewSel = document.getElementById("bank-view-select");
+    const selectedId = parseInt(viewSel?.value || 0, 10);
+    if (!selectedId) {
+        tb.innerHTML = `<tr><td colspan="4" class="text-right">Select a bank to view balance</td></tr>`;
+        document.getElementById("bank-total-footer").innerText = format(0);
+        renderBankReport();
+        return;
+    }
+    const bank = db.banks.find((b) => b.id === selectedId);
+    if (bank) {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-      <td>${b.name}</td>
-      <td>${b.acc}</td>
-      <td class="text-right">${format(b.bal)}</td>
-      <td><button class="btn btn-sm btn-danger" data-del-bank="${b.id}">x</button></td>
+      <td>${bank.name}</td>
+      <td>${bank.acc}</td>
+      <td class="text-right">${format(bank.bal)}</td>
+      <td><button class="btn btn-sm btn-danger" data-del-bank="${bank.id}">x</button></td>
     `;
         tb.appendChild(tr);
-    });
-    document.getElementById("bank-total-footer").innerText = format(sum);
+        document.getElementById("bank-total-footer").innerText = format(bank.bal);
+    } else {
+        tb.innerHTML = `<tr><td colspan="4" class="text-right">Select a bank to view balance</td></tr>`;
+        document.getElementById("bank-total-footer").innerText = format(0);
+    }
     renderBankReport();
 }
 
@@ -1495,9 +1587,18 @@ function renderBankReport() {
     if (!tb) return;
     tb.innerHTML = "";
 
+    const viewSel = document.getElementById("bank-view-select");
+    const selectedId = parseInt(viewSel?.value || 0, 10);
+    if (!selectedId) {
+        tb.innerHTML = `<tr><td colspan="4" class="text-right">Select a bank to view transactions</td></tr>`;
+        document.getElementById("bank-tx-total-footer").innerText = format(0);
+        return;
+    }
+
     const data = db.bankTx.filter((t) => {
         if (start && t.date < start) return false;
         if (end && t.date > end) return false;
+        if (selectedId && t.bankId !== selectedId) return false;
         return true;
     });
 
@@ -1569,6 +1670,230 @@ function renderLedgers() {
       `;
             supTb.appendChild(tr);
         });
+    renderCustomerLedgerDetail();
+    renderSupplierLedgerDetail();
+}
+
+function buildCustomerLedgerEntries(custId) {
+    const start = document.getElementById("led-rpt-start").value || null;
+    const end = document.getElementById("led-rpt-end").value || null;
+    const entries = [];
+    db.sales
+        .filter((s) => s.custId === custId)
+        .filter((s) => (!start || s.date >= start) && (!end || s.date <= end))
+        .forEach((s) => {
+            entries.push({
+                date: s.date,
+                desc: `Sale #${s.id} (${s.payMode})`,
+                debit: s.total,
+                credit: 0
+            });
+            if (s.received) {
+                entries.push({
+                    date: s.date,
+                    desc: `Payment with sale #${s.id}`,
+                    debit: 0,
+                    credit: s.received
+                });
+            }
+        });
+    db.transactions
+        .filter((t) => t.relId === custId)
+        .filter((t) => (!start || t.date >= start) && (!end || t.date <= end))
+        .forEach((t) => {
+            entries.push({
+                date: t.date,
+                desc: t.desc || t.type,
+                debit: t.amt > 0 ? t.amt : 0,
+                credit: t.amt < 0 ? -t.amt : 0
+            });
+        });
+    entries.sort((a, b) => a.date.localeCompare(b.date));
+    let bal = 0;
+    return entries.map((e) => {
+        bal += e.debit - e.credit;
+        return { ...e, balance: bal };
+    });
+}
+
+function buildSupplierLedgerEntries(supId) {
+    const start = document.getElementById("led-sup-start").value || null;
+    const end = document.getElementById("led-sup-end").value || null;
+    const entries = [];
+    db.purchases
+        .filter((p) => p.supId === supId)
+        .filter((p) => (!start || p.date >= start) && (!end || p.date <= end))
+        .forEach((p) => {
+            entries.push({
+                date: p.date,
+                desc: `PO #${p.id}`,
+                debit: p.total,
+                credit: 0
+            });
+        });
+    db.transactions
+        .filter((t) => t.relSupId === supId)
+        .filter((t) => (!start || t.date >= start) && (!end || t.date <= end))
+        .forEach((t) => {
+            entries.push({
+                date: t.date,
+                desc: t.desc || t.type,
+                debit: t.amt > 0 ? t.amt : 0,
+                credit: t.amt < 0 ? -t.amt : 0
+            });
+        });
+    entries.sort((a, b) => a.date.localeCompare(b.date));
+    let bal = 0;
+    return entries.map((e) => {
+        bal += e.debit - e.credit;
+        return { ...e, balance: bal };
+    });
+}
+
+function renderCustomerLedgerDetail() {
+    const sel = document.getElementById("ledger-cust-select");
+    const body = document.getElementById("ledger-cust-detail");
+    const container = document.getElementById("ledger-cust-detail-container");
+    const empty = document.getElementById("ledger-cust-empty");
+    if (!sel || !body || !container || !empty) return;
+    const id = parseInt(sel.value || 0, 10);
+    if (!id) {
+        body.innerHTML = "";
+        container.classList.add("hidden");
+        empty.style.display = "block";
+        return;
+    }
+    const entries = buildCustomerLedgerEntries(id);
+    body.innerHTML = "";
+    if (entries.length === 0) {
+        empty.style.display = "block";
+        container.classList.add("hidden");
+        return;
+    }
+    empty.style.display = "none";
+    container.classList.remove("hidden");
+    entries.forEach((e) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+      <td>${e.date}</td>
+      <td>${e.desc}</td>
+      <td class="text-right">${format(e.debit)}</td>
+      <td class="text-right">${format(e.credit)}</td>
+      <td class="text-right">${format(e.balance)}</td>
+    `;
+        body.appendChild(tr);
+    });
+}
+
+function renderSupplierLedgerDetail() {
+    const sel = document.getElementById("ledger-sup-select");
+    const body = document.getElementById("ledger-sup-detail");
+    const container = document.getElementById("ledger-sup-detail-container");
+    const empty = document.getElementById("ledger-sup-empty");
+    if (!sel || !body || !container || !empty) return;
+    const id = parseInt(sel.value || 0, 10);
+    if (!id) {
+        body.innerHTML = "";
+        container.classList.add("hidden");
+        empty.style.display = "block";
+        return;
+    }
+    const entries = buildSupplierLedgerEntries(id);
+    body.innerHTML = "";
+    if (entries.length === 0) {
+        empty.style.display = "block";
+        container.classList.add("hidden");
+        return;
+    }
+    empty.style.display = "none";
+    container.classList.remove("hidden");
+    entries.forEach((e) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+      <td>${e.date}</td>
+      <td>${e.desc}</td>
+      <td class="text-right">${format(e.debit)}</td>
+      <td class="text-right">${format(e.credit)}</td>
+      <td class="text-right">${format(e.balance)}</td>
+    `;
+        body.appendChild(tr);
+    });
+}
+
+function printCustomerLedger() {
+    const sel = document.getElementById("ledger-cust-select");
+    const custId = parseInt(sel?.value || 0, 10);
+    if (!custId) return;
+    const cust = db.customers.find((c) => c.id === custId);
+    const entries = buildCustomerLedgerEntries(custId);
+    const rows = entries
+        .map(
+            (e) => `
+      <tr>
+        <td>${e.date}</td>
+        <td>${e.desc}</td>
+        <td>${format(e.debit)}</td>
+        <td>${format(e.credit)}</td>
+        <td>${format(e.balance)}</td>
+      </tr>`
+        )
+        .join("");
+    const zone = document.getElementById("print-zone");
+    zone.innerHTML = `
+    <div class="print-header">
+      ${db.info.logo ? `<img src="${db.info.logo}">` : ""}
+      <h2>${db.info.name}</h2>
+      <p>${db.info.addr}</p>
+      <hr>
+      <h3>Customer Ledger - ${cust ? cust.name : ""}</h3>
+    </div>
+    <table class="print-table">
+      <thead>
+        <tr><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th><th>Balance</th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+    window.print();
+    setTimeout(() => (zone.innerHTML = ""), 1000);
+}
+
+function printSupplierLedger() {
+    const sel = document.getElementById("ledger-sup-select");
+    const supId = parseInt(sel?.value || 0, 10);
+    if (!supId) return;
+    const sup = db.suppliers.find((s) => s.id === supId);
+    const entries = buildSupplierLedgerEntries(supId);
+    const rows = entries
+        .map(
+            (e) => `
+      <tr>
+        <td>${e.date}</td>
+        <td>${e.desc}</td>
+        <td>${format(e.debit)}</td>
+        <td>${format(e.credit)}</td>
+        <td>${format(e.balance)}</td>
+      </tr>`
+        )
+        .join("");
+    const zone = document.getElementById("print-zone");
+    zone.innerHTML = `
+    <div class="print-header">
+      ${db.info.logo ? `<img src="${db.info.logo}">` : ""}
+      <h2>${db.info.name}</h2>
+      <p>${db.info.addr}</p>
+      <hr>
+      <h3>Supplier Ledger - ${sup ? sup.name : ""}</h3>
+    </div>
+    <table class="print-table">
+      <thead>
+        <tr><th>Date</th><th>Description</th><th>Debit</th><th>Credit</th><th>Balance</th></tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+    window.print();
+    setTimeout(() => (zone.innerHTML = ""), 1000);
 }
 
 function printCustomerCreditReport() {
@@ -1767,6 +2092,28 @@ function toggleCustomerDisplay() {
     if (customerDisplayOn) updateCustomerDisplay();
 }
 
+const customerDrag = { active: false, offsetX: 0, offsetY: 0 };
+function initCustomerDisplayDrag() {
+    const display = document.getElementById("customer-display");
+    const handle = document.querySelector("#customer-display h3");
+    if (!display || !handle) return;
+    handle.addEventListener("mousedown", (e) => {
+        customerDrag.active = true;
+        customerDrag.offsetX = e.clientX - display.offsetLeft;
+        customerDrag.offsetY = e.clientY - display.offsetTop;
+        display.classList.add("draggable");
+    });
+    window.addEventListener("mousemove", (e) => {
+        if (!customerDrag.active) return;
+        display.style.left = `${e.clientX - customerDrag.offsetX}px`;
+        display.style.top = `${e.clientY - customerDrag.offsetY}px`;
+    });
+    window.addEventListener("mouseup", () => {
+        customerDrag.active = false;
+        display.classList.remove("draggable");
+    });
+}
+
 function updateCustomerDisplay() {
     if (!customerDisplayOn) return;
     const itemsDiv = document.getElementById("cust-d-items");
@@ -1812,7 +2159,9 @@ function updateCustomerDisplay() {
   `;
 
     const mode = document.getElementById("pos-mode").value;
-    payDiv.innerHTML = `<p>Payment Mode: <strong>${mode}</strong></p>`;
+    const bankSel = document.getElementById("pos-bank");
+    const bankName = bankSel ? bankSel.options[bankSel.selectedIndex]?.text : "";
+    payDiv.innerHTML = `<p>Payment Mode: <strong>${mode}</strong>${mode === "Online" && bankName ? ` (${bankName})` : ""}</p>`;
 }
 
 // CUSTOMER / SUPPLIER PAYMENTS (LEDGER)
@@ -1857,6 +2206,7 @@ function saveCustPayment() {
             db.bankTx.push({ id: Date.now(), date, bankId: bank.id, type: "Deposit", amt });
         }
     }
+    printCustomerReceipt(cust, amt, date, mode);
     saveDB();
     closeModal("m-cust-pay");
     renderLedgers();
@@ -1886,10 +2236,58 @@ function saveSupPayment() {
             db.bankTx.push({ id: Date.now(), date, bankId: bank.id, type: "Withdraw", amt: -amt });
         }
     }
+    db.transactions.push({
+        date,
+        type: "Supplier Payment",
+        desc: "Payment to supplier",
+        amt: -amt,
+        relSupId: supId
+    });
+    printSupplierReceipt(sup, amt, date, mode);
     saveDB();
     closeModal("m-sup-pay");
     renderLedgers();
     renderBanks();
+}
+
+function printCustomerReceipt(cust, amt, date, mode) {
+    const zone = document.getElementById("print-zone");
+    zone.innerHTML = `
+    <div class="print-header">
+      ${db.info.logo ? `<img src="${db.info.logo}">` : ""}
+      <h2>${db.info.name}</h2>
+      <p>${db.info.addr}</p>
+      <hr>
+      <h3>Customer Payment Receipt</h3>
+      <p>Customer: ${cust ? cust.name : ""}</p>
+      <p>Date: ${date}</p>
+      <p>Mode: ${mode}</p>
+      <p>Amount Received: ${format(amt)}</p>
+      <p>Remaining Balance: ${format(cust ? cust.bal || 0 : 0)}</p>
+    </div>
+  `;
+    window.print();
+    setTimeout(() => (zone.innerHTML = ""), 1000);
+}
+
+function printSupplierReceipt(sup, amt, date, mode) {
+    const zone = document.getElementById("print-zone");
+    zone.innerHTML = `
+    <div class="print-header">
+      ${db.info.logo ? `<img src="${db.info.logo}">` : ""}
+      <h2>${db.info.name}</h2>
+      <p>${db.info.addr}</p>
+      <hr>
+      <h3>Supplier Payment Receipt</h3>
+      <p>Supplier: ${sup ? sup.name : ""}</p>
+      <p>Date: ${date}</p>
+      <p>Mode: ${mode}</p>
+      <p>Amount Paid: ${format(amt)}</p>
+      <p>Remaining Payable: ${format(sup ? sup.bal || 0 : 0)}</p>
+    </div>
+  `;
+    window.print();
+    setTimeout(() => (zone.innerHTML = ""), 1000);
 }
 
 // HELPERS
@@ -1960,6 +2358,7 @@ function attachEvents() {
     document.getElementById("theme-selector").addEventListener("change", (e) =>
         setTheme(e.target.value)
     );
+    initCustomerDisplayDrag();
 
     // calendar button sets today's date in common date filters
     document.getElementById("calendar-btn").addEventListener("click", () => {
@@ -2031,6 +2430,9 @@ function attachEvents() {
     document
         .getElementById("btn-save-bank")
         .addEventListener("click", saveBank);
+    document
+        .getElementById("bank-view-select")
+        .addEventListener("change", renderBanks);
 
     document
         .getElementById("btn-add-bank-tx")
@@ -2166,6 +2568,18 @@ function attachEvents() {
         .getElementById("btn-print-cust-credit-report")
         .addEventListener("click", printCustomerCreditReport);
     document
+        .getElementById("ledger-cust-select")
+        .addEventListener("change", renderCustomerLedgerDetail);
+    document
+        .getElementById("ledger-sup-select")
+        .addEventListener("change", renderSupplierLedgerDetail);
+    document
+        .getElementById("btn-print-cust-ledger")
+        .addEventListener("click", printCustomerLedger);
+    document
+        .getElementById("btn-print-sup-ledger")
+        .addEventListener("click", printSupplierLedger);
+    document
         .getElementById("btn-print-sup-report")
         .addEventListener("click", printSupplierReport);
 
@@ -2187,6 +2601,12 @@ function attachEvents() {
     );
     document.getElementById("sp-mode").addEventListener("change", () =>
         toggleBank("sp-mode", ".sp-bank-row")
+    );
+    ["led-rpt-start", "led-rpt-end"].forEach((id) =>
+        document.getElementById(id).addEventListener("change", renderCustomerLedgerDetail)
+    );
+    ["led-sup-start", "led-sup-end"].forEach((id) =>
+        document.getElementById(id).addEventListener("change", renderSupplierLedgerDetail)
     );
 
     // HR / Expenses / Banks / Ledgers delete/edit

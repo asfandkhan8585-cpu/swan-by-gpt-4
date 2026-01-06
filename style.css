@@ -97,6 +97,11 @@ body {
     border-bottom: 1px solid var(--border);
     font-size: 0.95rem;
 }
+#calendar-btn {
+    background: #ffffff !important;
+    color: #000 !important;
+    border-color: var(--accent) !important;
+}
 .brand {
     font-weight: 800;
     letter-spacing: 1px;
@@ -391,6 +396,11 @@ tr:hover td {
     gap: 10px;
     height: 100%;
 }
+.pos-mid-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: auto;
+}
 .pos-totals {
     margin-top: auto;
     border-top: 1px dashed var(--border);
@@ -401,6 +411,13 @@ tr:hover td {
     justify-content: space-between;
     margin-bottom: 4px;
     font-size: 0.9rem;
+    align-items: center;
+}
+.pos-row span:first-child {
+    min-width: 110px;
+}
+.pos-row input {
+    margin-left: auto;
 }
 .grand-total {
     font-size: 1.6rem;
@@ -426,7 +443,10 @@ tr:hover td {
     min-width: 0;
 }
 .pos-cart-container {
-    max-height: 40vh;
+    height: 45vh;
+}
+.pos-mid-panel .reports-table-container {
+    flex: 1;
 }
 .pos-mid-toggle {
     margin-top: 6px;
@@ -527,12 +547,12 @@ tr:hover td {
 
 /* Customer Screen */
 .customer-screen {
-    position: fixed;
-    right: 0;
-    top: 0;
-    width: 40%;
-    max-width: 480px;
-    height: 100%;
+    position: absolute;
+    top: 20px;
+    left: 60%;
+    width: 420px;
+    max-width: 520px;
+    height: 90%;
     background: radial-gradient(circle at top left, #0f172a, #020617);
     color: #e5f9ff;
     padding: 10px;
@@ -562,6 +582,9 @@ tr:hover td {
 .cust-items {
     flex: 1;
     overflow-y: auto;
+}
+.customer-screen.draggable {
+    cursor: move;
 }
 .cust-block p {
     margin: 2px 0;
@@ -614,4 +637,16 @@ tr:hover td {
 .customer-screen::-webkit-scrollbar-thumb {
     background: #475569;
     border-radius: 3px;
+}
+
+/* Purchase cart scroll */
+#purchase-cart-container {
+    max-height: 45vh;
+}
+
+/* Ledger detail tables */
+.ledger-detail-empty {
+    padding: 10px;
+    color: var(--muted);
+    text-align: center;
 }
