@@ -592,7 +592,7 @@
                   style="margin-top:10px; margin-bottom:10px; display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;"
           >
             <div style="flex:1;min-width:180px">
-              <label class="small-muted">Customer</label>
+              <label class="small-muted">Select Customer</label>
               <select id="led-credit-cust" style="width:100%"></select>
             </div>
             <div style="width:140px">
@@ -616,6 +616,15 @@
               <button
                       class="btn btn-sm"
                       style="height:36px"
+                      id="btn-print-cust-ledger"
+              >
+                <i class="fa fa-book"></i> Print Ledger
+              </button>
+            </div>
+            <div>
+              <button
+                      class="btn btn-sm"
+                      style="height:36px"
                       id="btn-ledger-receive"
               >
                 <i class="fa fa-hand-holding-dollar"></i> Receive Payment
@@ -633,15 +642,30 @@
                   <th>Act</th>
                 </tr>
                 </thead>
-                <tbody id="led-cust"></tbody>
-              </table>
-            </div>
-          </div>
+            <tbody id="led-cust"></tbody>
+          </table>
         </div>
+      </div>
+      <div class="table-container reports-table-container" style="margin-top:6px; max-height:200px;">
+        <div class="table-scroll">
+          <table class="table-tight">
+            <thead>
+            <tr>
+              <th>Date</th>
+              <th>Detail</th>
+              <th class="text-right">Amount</th>
+              <th class="text-right">Balance</th>
+            </tr>
+            </thead>
+            <tbody id="cust-ledger-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
 
-        <!-- SUPPLIERS -->
-        <div class="panel col">
-          <div
+    <!-- SUPPLIERS -->
+    <div class="panel col">
+      <div
                   class="row"
                   style="align-items:center; border-bottom:1px solid var(--border); padding-bottom:5px;"
           >
@@ -657,7 +681,7 @@
                   style="margin-top:10px; margin-bottom:10px; display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;"
           >
             <div style="flex:1;min-width:180px">
-              <label class="small-muted">Supplier</label>
+              <label class="small-muted">Select Supplier</label>
               <select id="led-sup-select" style="width:100%"></select>
             </div>
             <div style="width:140px">
@@ -681,6 +705,15 @@
               <button
                       class="btn btn-sm"
                       style="height:36px"
+                      id="btn-print-sup-ledger"
+              >
+                <i class="fa fa-book"></i> Print Ledger
+              </button>
+            </div>
+            <div>
+              <button
+                      class="btn btn-sm"
+                      style="height:36px"
                       id="btn-ledger-pay-sup"
               >
                 <i class="fa fa-money-bill"></i> Pay Supplier
@@ -697,13 +730,28 @@
                   <th>Act</th>
                 </tr>
                 </thead>
-                <tbody id="led-sup"></tbody>
-              </table>
-            </div>
-          </div>
+            <tbody id="led-sup"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="table-container reports-table-container" style="margin-top:6px; max-height:200px;">
+        <div class="table-scroll">
+          <table class="table-tight">
+            <thead>
+            <tr>
+              <th>Date</th>
+              <th>Detail</th>
+              <th class="text-right">Amount</th>
+              <th class="text-right">Balance</th>
+            </tr>
+            </thead>
+            <tbody id="sup-ledger-body"></tbody>
+          </table>
         </div>
       </div>
     </div>
+  </div>
+</div>
 
     <!-- EXPENSES -->
     <div id="expenses" class="view">
@@ -769,6 +817,12 @@
           <button class="btn" id="btn-add-bank-tx">
             Add Bank Transaction
           </button>
+          <div>
+            <label class="small-muted">Select Bank</label>
+            <select id="bank-view-filter" style="min-width:180px;">
+              <option value="">Select bank</option>
+            </select>
+          </div>
           <div>
             <label class="small-muted">From</label>
             <input type="date" id="bank-start" />
