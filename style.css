@@ -391,6 +391,10 @@ tr:hover td {
     gap: 10px;
     height: 100%;
 }
+.pos-layout .panel {
+    min-height: 0;
+    overflow: hidden;
+}
 .pos-totals {
     margin-top: auto;
     border-top: 1px dashed var(--border);
@@ -401,6 +405,11 @@ tr:hover td {
     justify-content: space-between;
     margin-bottom: 4px;
     font-size: 0.9rem;
+    align-items: center;
+    gap: 8px;
+}
+.pos-row span:first-child {
+    flex: 1;
 }
 .grand-total {
     font-size: 1.6rem;
@@ -424,9 +433,20 @@ tr:hover td {
 }
 .pos-mid-panel {
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
 }
 .pos-cart-container {
-    max-height: 40vh;
+    max-height: 40vh !important;
+}
+.pos-mid-panel .table-container {
+    min-height: 140px;
+    max-height: 32vh;
+}
+.pos-cart-container .table-scroll {
+    max-height: 38vh;
 }
 .pos-mid-toggle {
     margin-top: 6px;
@@ -528,8 +548,8 @@ tr:hover td {
 /* Customer Screen */
 .customer-screen {
     position: fixed;
-    right: 0;
-    top: 0;
+    right: 10px;
+    top: 10px;
     width: 40%;
     max-width: 480px;
     height: 100%;
@@ -540,6 +560,7 @@ tr:hover td {
     border-left: 2px solid #38bdf8;
     font-family: "JetBrains Mono", monospace;
     box-shadow: -6px 0 18px rgba(0, 0, 0, 0.6);
+    cursor: move;
 }
 .customer-inner {
     height: 100%;
@@ -614,4 +635,15 @@ tr:hover td {
 .customer-screen::-webkit-scrollbar-thumb {
     background: #475569;
     border-radius: 3px;
+}
+
+#purchase-cart-container,
+#purchase-cart-container .table-scroll {
+    max-height: 45vh;
+}
+
+.top-bar #calendar-btn {
+    background: #ffffff;
+    color: var(--bg-main);
+    border-color: #ffffff;
 }
