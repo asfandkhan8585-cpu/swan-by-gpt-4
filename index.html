@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>SWAN-ERP Final Refined</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link
+          rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+  />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="theme-default">
+<div class="app-shell">
+  <header class="top-bar">
+    <div class="brand">
+      <img
+              id="brand-logo"
+              src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><polygon points='10,70 40,20 60,40 80,30 90,50 70,60 50,80 30,75' fill='%23ffffff' stroke='%23000000' stroke-width='0.5' opacity='0.9'/></svg>"
+              alt="Swan Logo"
+      />
+      <div>
+        <span style="display:block;font-size:1.05rem">SWAN-ERP</span>
+        <small class="small-muted">Retail & Inventory</small>
+      </div>
+    </div>
+    <div style="display:flex; gap:15px; align-items:center;">
+      <button
+              id="calendar-btn"
+              class="btn btn-sm"
+              style="background:transparent;color:#ffffff;border-color:var(--accent);"
+              title="Today"
+      >
+        <i class="fa fa-calendar"></i>
+      </button>
+      <span
+              id="clock"
+              style="color:var(--muted); font-family:monospace;"
+      >00:00:00</span>
+
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span id="role-label" class="small-muted">Role: Employee</span>
+        <button class="btn btn-sm" id="btn-switch-role">Switch Role</button>
+      </div>
+
+      <button class="btn btn-sm" id="btn-toggle-cust-display">
+        Customer Screen
+      </button>
+
+      <select id="theme-selector" style="width:auto; padding:4px;">
+        <option value="theme-default">Default</option>
+        <option value="theme-green">Forest</option>
+        <option value="theme-orange">Sunset</option>
+        <option value="theme-red">Crimson</option>
+        <option value="theme-paper">Paper</option>
+        <option value="theme-slate">Slate</option>
+        <option value="theme-cool">Cool</option>
+        <option value="theme-sun">Sunrise</option>
+      </select>
+    </div>
+  </header>
+
+  <nav class="ribbon">
+    <button class="ribbon-btn active" data-view="dashboard">
+      <i class="fa fa-chart-pie"></i> Dashboard
+    </button>
+    <div class="ribbon-sep"></div>
+    <button class="ribbon-btn" data-view="pos">
+      <i class="fa fa-cash-register"></i> Sale (POS)
+    </button>
+    <button class="ribbon-btn" data-view="purchase">
+      <i class="fa fa-cart-shopping"></i> Purchase
+    </button>
+    <button class="ribbon-btn" data-view="inventory">
+      <i class="fa fa-boxes"></i> Inventory
+    </button>
+    <div class="ribbon-sep"></div>
+    <button class="ribbon-btn" data-view="ledger">
+      <i class="fa fa-book"></i> Ledger
+    </button>
+    <button class="ribbon-btn" data-view="expenses">
+      <i class="fa fa-receipt"></i> Expenses
+    </button>
+    <button class="ribbon-btn" data-view="banking">
+      <i class="fa fa-university"></i> Banking
+    </button>
+    <button class="ribbon-btn" data-view="hr">
+      <i class="fa fa-users"></i> Employees
+    </button>
+    <div class="ribbon-sep"></div>
+    <button class="ribbon-btn" data-view="settings">
+      <i class="fa fa-cogs"></i> Settings
+    </button>
+  </nav>
+
+  <main class="main-area">
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="view active">
+      <div class="dash-grid">
+        <div class="tile">
+          <span class="tile-head">Total Sales</span>
+          <span class="tile-val" id="d-total">0.00</span>
+          <span class="tile-sub">By date range</span>
+        </div>
+        <div class="tile">
+          <span class="tile-head">Cash Sales</span>
+          <span class="tile-val" id="d-cash">0.00</span>
+        </div>
+        <div class="tile">
+          <span class="tile-head">Credit Sales</span>
+          <span class="tile-val" id="d-credit" style="color:var(--warn)">0.00</span>
+        </div>
+        <div class="tile">
+          <span class="tile-head">Online / Bank</span>
+          <span class="tile-val" id="d-online">0.00</span>
+        </div>
+        <div class="tile tile-hidden-admin">
+          <span class="tile-head">Gross Profit</span>
+          <span class="tile-val" id="d-gross" style="color:var(--success)">0.00</span>
+        </div>
+        <div class="tile tile-hidden-admin" style="border-color:var(--danger)">
+          <span class="tile-head">Net Profit</span>
+          <span class="tile-val text-danger" id="d-net">0.00</span>
+        </div>
+      </div>
+      <div class="report-bar">
+        <h3
+                style="color:var(--muted); margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:5px;"
+        >
+          REPORTS & ACTIONS
+        </h3>
+        <div class="report-controls">
+          <div class="field">
+            <label>From</label>
+            <input type="date" id="rpt-start" style="width:140px" />
+          </div>
+          <div class="field">
+            <label>To</label>
+            <input type="date" id="rpt-end" style="width:140px" />
+          </div>
+
+          <div class="field">
+            <label>Sale</label>
+            <div class="row">
+              <button class="btn btn-sm" data-rpt-view="sale">
+                <i class="fa fa-eye"></i> View
+              </button>
+              <button class="btn btn-sm" data-rpt-print="sale">
+                <i class="fa fa-print"></i> Print
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Profit</label>
+            <div class="row">
+              <button class="btn btn-sm" data-rpt-view="profit">
+                <i class="fa fa-eye"></i> View
+              </button>
+              <button class="btn btn-sm" data-rpt-print="profit">
+                <i class="fa fa-print"></i> Print
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Expense</label>
+            <div class="row">
+              <button class="btn btn-sm" data-rpt-view="expense">
+                <i class="fa fa-eye"></i> View
+              </button>
+              <button class="btn btn-sm" data-rpt-print="expense">
+                <i class="fa fa-print"></i> Print
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Stock</label>
+            <div class="row">
+              <button class="btn btn-sm" data-rpt-view="stock">
+                <i class="fa fa-eye"></i> View
+              </button>
+              <button class="btn btn-sm" data-rpt-print="stock">
+                <i class="fa fa-print"></i> Print
+              </button>
+            </div>
+          </div>
+
+          <div style="flex:1"></div>
+          <div class="field">
+            <label>Browse Bills</label>
+            <div class="row">
+              <button class="btn btn-sm" id="btn-bill-prev">
+                <i class="fa fa-chevron-left"></i>
+              </button>
+              <input
+                      id="bill-index"
+                      style="width:170px;text-align:center"
+                      readonly
+              />
+              <button class="btn btn-sm" id="btn-bill-next">
+                <i class="fa fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <div class="row">
+              <button class="btn btn-sm" id="btn-bill-reprint">
+                <i class="fa fa-print"></i> Reprint
+              </button>
+              <button class="btn btn-sm" id="btn-bill-return">
+                <i class="fa fa-undo"></i> Return
+              </button>
+              <button class="btn btn-sm text-danger" id="btn-bill-delete">
+                <i class="fa fa-trash"></i> Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- POS -->
+    <div id="pos" class="view">
+      <div class="pos-layout">
+        <!-- LEFT: BASIC INFO -->
+        <div class="panel">
+          <div class="field">
+            <label>Customer</label>
+            <div class="row">
+              <select id="pos-cust"></select>
+              <button class="btn btn-primary" id="btn-add-cust">+</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Payment Mode</label>
+            <select id="pos-mode">
+              <option value="Cash">Cash</option>
+              <option value="Credit">Credit</option>
+              <option value="Online">Online/Bank</option>
+            </select>
+          </div>
+          <div class="field hidden" id="pos-bank-row">
+            <label>Select Bank</label>
+            <select id="pos-bank"></select>
+          </div>
+          <div class="field">
+            <label>Remarks</label>
+            <textarea id="pos-rem" rows="2"></textarea>
+          </div>
+          <div class="pos-toggle">
+            <button class="toggle-btn" id="pos-toggle-cart">
+              <i class="fa fa-bars"></i> Toggle Cart Panel
+            </button>
+            <button class="toggle-btn" id="pos-toggle-search">
+              <i class="fa fa-magnifying-glass"></i> Toggle Search Panel
+            </button>
+          </div>
+          <div class="pos-toggle">
+            <button class="toggle-btn" id="btn-hold-bill">
+              <i class="fa fa-pause"></i> HOLD (F6)
+            </button>
+            <button class="toggle-btn" id="btn-recall-bill">
+              <i class="fa fa-play"></i> RECALL (F7)
+            </button>
+          </div>
+        </div>
+
+        <!-- MIDDLE: SEARCH + CART (COLLAPSIBLE) -->
+        <div class="panel pos-mid-panel" id="pos-mid-panel">
+          <div class="field">
+            <label>Scan Barcode / Search Item</label>
+            <input
+                    id="pos-search"
+                    placeholder="Type item name or code..."
+            />
+          </div>
+
+          <div class="field">
+            <label>Search Results</label>
+          </div>
+          <div class="table-container reports-table-container">
+            <div class="table-scroll">
+              <table class="table-tight">
+                <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th class="text-right">Price</th>
+                  <th class="text-right">Stock</th>
+                  <th></th>
+                </tr>
+                </thead>
+                <tbody id="pos-search-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Cart Items</label>
+          </div>
+          <div class="table-container reports-table-container pos-cart-container" id="pos-cart-container">
+            <div class="table-scroll">
+              <table class="table-tight">
+                <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Unit</th>
+                  <th>Qty</th>
+                  <th class="text-right">Price</th>
+                  <th class="text-right">Total</th>
+                  <th></th>
+                </tr>
+                </thead>
+                <tbody id="pos-body"></tbody>
+                <tfoot>
+                <tr>
+                  <th colspan="4" class="text-right">Cart Subtotal</th>
+                  <th class="text-right" id="pos-cart-sub-footer">0.00</th>
+                  <th></th>
+                </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <div class="pos-mid-toggle">
+            <button class="toggle-btn" id="pos-toggle-cart-inner">
+              <i class="fa fa-eye-slash"></i> Hide Cart Table
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT: TOTALS -->
+        <div class="panel">
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="pos-date" />
+          </div>
+          <div class="pos-totals">
+            <div class="pos-row">
+              <span>Subtotal</span>
+              <span id="pos-sub">0.00</span>
+            </div>
+            <div class="pos-row">
+              <span>Discount</span>
+              <input
+                      type="number"
+                      id="pos-disc"
+                      value="0"
+                      style="width:80px; text-align:right"
+              />
+            </div>
+            <div class="pos-row">
+              <span>Tax (%)</span>
+              <input
+                      type="number"
+                      id="pos-tax"
+                      value="0"
+                      style="width:80px; text-align:right"
+              />
+            </div>
+            <div class="pos-row">
+              <span>Fixed Tax</span>
+              <input
+                      type="number"
+                      id="pos-fixed-tax"
+                      value="0"
+                      style="width:80px; text-align:right"
+              />
+            </div>
+            <div class="pos-row">
+              <span>Service Chg</span>
+              <input
+                      type="number"
+                      id="pos-svc"
+                      value="0"
+                      style="width:80px; text-align:right"
+              />
+            </div>
+            <div class="grand-total" id="pos-net">0.00</div>
+          </div>
+          <div class="field">
+            <label>Tendered</label>
+            <input type="number" id="pos-tend" />
+          </div>
+          <div
+                  class="pos-row"
+                  style="font-size:1.1rem; font-weight:bold"
+          >
+            <span>Change:</span>
+            <span id="pos-change">0.00</span>
+          </div>
+
+          <div class="pos-controls">
+            <div style="display:flex; gap:8px; margin-top:10px">
+              <button
+                      class="btn btn-primary"
+                      style="height:46px; flex:1"
+                      id="btn-save-bill"
+              >
+                <i class="fa fa-save"></i> Save Bill
+              </button>
+              <button
+                      class="btn btn-primary"
+                      style="height:46px; flex:1"
+                      id="btn-save-print-bill"
+              >
+                <i class="fa fa-save"></i> Save & Print
+              </button>
+            </div>
+            <button
+                    class="btn btn-danger btn-block"
+                    style="margin-top:8px;"
+                    id="btn-clear-pos"
+            >
+              CLEAR
+            </button>
+            <div style="height:6px"></div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <button class="btn btn-sm" id="btn-pos-prev-bill">
+                <i class="fa fa-chevron-left"></i> Prev Bill
+              </button>
+              <button class="btn btn-sm" id="btn-pos-next-bill">
+                Next Bill <i class="fa fa-chevron-right"></i>
+              </button>
+              <div style="flex:1"></div>
+              <button class="btn btn-sm" id="btn-open-bill-viewer">
+                <i class="fa fa-list"></i> Bill Viewer
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PURCHASE -->
+    <div id="purchase" class="view">
+      <div class="row" style="margin-bottom:10px;">
+        <div class="panel col">
+          <div class="field">
+            <label>Supplier</label>
+            <div class="row">
+              <select id="pur-sup"></select>
+              <button class="btn btn-primary" id="btn-add-sup">+</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="pur-date" />
+          </div>
+          <div class="pos-toggle">
+            <button class="toggle-btn" id="toggle-purchase-cart">
+              <i class="fa fa-bars"></i> Toggle Purchase Cart
+            </button>
+          </div>
+        </div>
+        <div class="panel col">
+          <div class="field">
+            <label>Search Item</label>
+            <input
+                    id="pur-search"
+                    placeholder="Type name/code"
+            />
+          </div>
+          <div class="table-container reports-table-container">
+            <div class="table-scroll">
+              <table class="table-tight">
+                <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th class="text-right">Cost</th>
+                  <th class="text-right">Stock</th>
+                  <th></th>
+                </tr>
+                </thead>
+                <tbody id="pur-search-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="field">
+          <label>Purchase Items</label>
+        </div>
+        <div class="table-container reports-table-container" id="purchase-cart-container">
+          <div class="table-scroll">
+            <table class="table-tight">
+              <thead>
+              <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                <th class="text-right">Cost</th>
+                <th class="text-right">Total</th>
+                <th></th>
+              </tr>
+              </thead>
+              <tbody id="pur-body"></tbody>
+              <tfoot>
+              <tr>
+                <th colspan="3" class="text-right">Purchase Total</th>
+                <th class="text-right" id="pur-total">0.00</th>
+                <th></th>
+              </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+        <button
+                class="btn btn-primary"
+                style="margin-top:8px;"
+                id="btn-save-purchase"
+        >
+          <i class="fa fa-save"></i> Save Purchase
+        </button>
+        <button
+                class="btn"
+                style="margin-top:8px;"
+                id="btn-print-purchase-report"
+        >
+          <i class="fa fa-print"></i> Purchase Report
+        </button>
+      </div>
+    </div>
+
+    <!-- INVENTORY -->
+    <div id="inventory" class="view">
+      <div
+              class="row"
+              style="margin-bottom:10px; justify-content:space-between"
+      >
+        <input
+                id="inv-search"
+                placeholder="Search items..."
+                style="width:300px"
+        />
+        <div style="display:flex;gap:8px;">
+          <button class="toggle-btn" id="toggle-inv-table">
+            <i class="fa fa-bars"></i> Toggle Inventory List
+          </button>
+          <button class="btn btn-primary" id="btn-new-item">
+            <i class="fa fa-plus"></i> Add Item
+          </button>
+        </div>
+      </div>
+      <div class="table-container reports-table-container" id="inv-table-container">
+        <div class="table-scroll">
+          <table class="table-tight">
+            <thead>
+            <tr>
+              <th>Code</th>
+              <th>Name</th>
+              <th>Loc</th>
+              <th class="text-right">Cost</th>
+              <th class="text-right">Price</th>
+              <th>Base Unit</th>
+              <th class="text-right">Stock</th>
+              <th>Act</th>
+            </tr>
+            </thead>
+            <tbody id="inv-body"></tbody>
+            <tfoot>
+            <tr>
+              <th colspan="6" class="text-right">Total Stock Value</th>
+              <th class="text-right" id="inv-stock-total">0.00</th>
+              <th></th>
+            </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEDGER -->
+    <div id="ledger" class="view">
+      <div class="row" style="height:100%; gap:20px;">
+        <!-- CUSTOMERS -->
+        <div class="panel col">
+          <div
+                  class="row"
+                  style="align-items:center; border-bottom:1px solid var(--border); padding-bottom:5px;"
+          >
+            <strong style="color:var(--accent-soft)">CUSTOMERS</strong>
+            <input
+                    id="search-cust"
+                    placeholder="Search..."
+                    style="margin-left:auto; width:150px"
+            />
+          </div>
+          <div
+                  style="margin-top:10px; margin-bottom:10px; display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;"
+          >
+            <div style="flex:1;min-width:180px">
+              <label class="small-muted">Customer</label>
+              <select id="led-credit-cust" style="width:100%"></select>
+            </div>
+            <div style="width:140px">
+              <label class="small-muted">From</label>
+              <input type="date" id="led-rpt-start" />
+            </div>
+            <div style="width:140px">
+              <label class="small-muted">To</label>
+              <input type="date" id="led-rpt-end" />
+            </div>
+            <div>
+              <button
+                      class="btn btn-sm btn-primary"
+                      style="height:36px"
+                      id="btn-print-cust-credit-report"
+              >
+                <i class="fa fa-print"></i> Credit Report
+              </button>
+            </div>
+            <div>
+              <button
+                      class="btn btn-sm"
+                      style="height:36px"
+                      id="btn-ledger-receive"
+              >
+                <i class="fa fa-hand-holding-dollar"></i> Receive Payment
+              </button>
+            </div>
+          </div>
+          <div class="table-container reports-table-container">
+            <div class="table-scroll">
+              <table class="table-tight">
+                <thead>
+                <tr>
+                  <th>Name</th>
+                  <th class="text-right">Balance</th>
+                  <th>Type</th>
+                  <th>Act</th>
+                </tr>
+                </thead>
+                <tbody id="led-cust"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUPPLIERS -->
+        <div class="panel col">
+          <div
+                  class="row"
+                  style="align-items:center; border-bottom:1px solid var(--border); padding-bottom:5px;"
+          >
+            <strong style="color:var(--warn)">SUPPLIERS</strong>
+            <input
+                    id="search-sup"
+                    placeholder="Search..."
+                    style="margin-left:auto; width:150px"
+            />
+            <button class="btn btn-sm" id="btn-add-sup-ledger">+</button>
+          </div>
+          <div
+                  style="margin-top:10px; margin-bottom:10px; display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;"
+          >
+            <div style="flex:1;min-width:180px">
+              <label class="small-muted">Supplier</label>
+              <select id="led-sup-select" style="width:100%"></select>
+            </div>
+            <div style="width:140px">
+              <label class="small-muted">From</label>
+              <input type="date" id="led-sup-start" />
+            </div>
+            <div style="width:140px">
+              <label class="small-muted">To</label>
+              <input type="date" id="led-sup-end" />
+            </div>
+            <div>
+              <button
+                      class="btn btn-sm btn-primary"
+                      style="height:36px"
+                      id="btn-print-sup-report"
+              >
+                <i class="fa fa-print"></i> Supplier Report
+              </button>
+            </div>
+            <div>
+              <button
+                      class="btn btn-sm"
+                      style="height:36px"
+                      id="btn-ledger-pay-sup"
+              >
+                <i class="fa fa-money-bill"></i> Pay Supplier
+              </button>
+            </div>
+          </div>
+          <div class="table-container reports-table-container">
+            <div class="table-scroll">
+              <table class="table-tight">
+                <thead>
+                <tr>
+                  <th>Name</th>
+                  <th class="text-right">Payable</th>
+                  <th>Act</th>
+                </tr>
+                </thead>
+                <tbody id="led-sup"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPENSES -->
+    <div id="expenses" class="view">
+      <div
+              class="row"
+              style="margin-bottom:10px; justify-content:space-between"
+      >
+        <h3>Expense Tracker</h3>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+          <div>
+            <label class="small-muted">From</label>
+            <input type="date" id="exp-start" />
+          </div>
+          <div>
+            <label class="small-muted">To</label>
+            <input type="date" id="exp-end" />
+          </div>
+          <button class="btn btn-sm" id="btn-exp-filter">
+            <i class="fa fa-filter"></i> Apply
+          </button>
+          <button class="toggle-btn" id="toggle-exp-table">
+            <i class="fa fa-bars"></i> Toggle Expense List
+          </button>
+          <button class="btn btn-primary" id="btn-add-exp">
+            Add Expense
+          </button>
+        </div>
+      </div>
+      <div class="table-container reports-table-container" id="exp-table-container">
+        <div class="table-scroll">
+          <table class="table-tight">
+            <thead>
+            <tr>
+              <th>Date</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th class="text-right">Amount</th>
+              <th>Act</th>
+            </tr>
+            </thead>
+            <tbody id="exp-body"></tbody>
+            <tfoot>
+            <tr>
+              <th colspan="3" class="text-right">Total Expenses</th>
+              <th class="text-right" id="exp-total-footer">0.00</th>
+              <th></th>
+            </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- BANKING -->
+    <div id="banking" class="view">
+      <div
+              class="row"
+              style="margin-bottom:10px; justify-content:space-between;flex-wrap:wrap"
+      >
+        <h3>Banking & Accounts</h3>
+        <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="btn-add-bank">Add Bank</button>
+          <button class="btn" id="btn-add-bank-tx">
+            Add Bank Transaction
+          </button>
+          <div>
+            <label class="small-muted">From</label>
+            <input type="date" id="bank-start" />
+          </div>
+          <div>
+            <label class="small-muted">To</label>
+            <input type="date" id="bank-end" />
+          </div>
+          <button class="btn btn-sm" id="btn-bank-rpt">
+            <i class="fa fa-eye"></i> View Report
+          </button>
+        </div>
+      </div>
+      <div class="row" style="gap:10px;height:100%;">
+        <div class="panel col">
+          <div class="table-container reports-table-container">
+            <div class="table-scroll">
+              <table class="table-tight">
+                <thead>
+                <tr>
+                  <th>Bank Name</th>
+                  <th>Account No</th>
+                  <th class="text-right">Balance</th>
+                  <th>Act</th>
+                </tr>
+                </thead>
+                <tbody id="bank-body"></tbody>
+                <tfoot>
+                <tr>
+                  <th colspan="2" class="text-right">Total Balance</th>
+                  <th class="text-right" id="bank-total-footer">0.00</th>
+                  <th></th>
+                </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="panel col">
+          <h4>Bank Transactions (Report)</h4>
+          <div class="table-container reports-table-container">
+            <div class="table-scroll">
+              <table class="table-tight">
+                <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Bank</th>
+                  <th>Type</th>
+                  <th class="text-right">Amount</th>
+                </tr>
+                </thead>
+                <tbody id="bank-tx-body"></tbody>
+                <tfoot>
+                <tr>
+                  <th colspan="3" class="text-right">Total Net</th>
+                  <th class="text-right" id="bank-tx-total-footer">0.00</th>
+                </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HR (EMPLOYEES) MAIN BUTTON ONLY -->
+    <div id="hr" class="view">
+      <div class="panel">
+        <h3>Employees & Attendance</h3>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="btn-open-hr-window">
+            Open Employee Screen (New Tab)
+          </button>
+          <button class="btn" id="btn-print-att-report">
+            Attendance Report
+          </button>
+        </div>
+        <p class="small-muted">
+          Employee management opens in a separate synced screen.
+        </p>
+        <div style="margin-top:10px; display:flex;gap:8px;flex-wrap:wrap;">
+          <div>
+            <label class="small-muted">From</label>
+            <input type="date" id="att-rpt-start" />
+          </div>
+          <div>
+            <label class="small-muted">To</label>
+            <input type="date" id="att-rpt-end" />
+          </div>
+          <div>
+            <label class="small-muted">Employee</label>
+            <select id="att-rpt-emp"></select>
+          </div>
+          <button class="btn btn-sm" id="btn-view-att-report">
+            <i class="fa fa-eye"></i> View
+          </button>
+        </div>
+        <div class="table-container reports-table-container" style="margin-top:10px;">
+          <div class="table-scroll">
+            <table class="table-tight">
+              <thead>
+              <tr>
+                <th>Employee</th>
+                <th class="text-right">Present</th>
+                <th class="text-right">Absent</th>
+                <th class="text-right">Late</th>
+                <th class="text-right">Leave</th>
+              </tr>
+              </thead>
+              <tbody id="att-rpt-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="settings" class="view">
+      <div class="row">
+        <div class="panel col" style="max-width:600px">
+          <h3>Company Info (For Bill)</h3>
+          <div class="field">
+            <label>Company Name</label>
+            <input id="set-name" />
+          </div>
+          <div class="field">
+            <label>Address / Phone</label>
+            <textarea id="set-addr" rows="3"></textarea>
+          </div>
+
+          <div class="field">
+            <label>Business Logo</label>
+            <input
+                    type="file"
+                    id="set-logo-file"
+                    accept="image/*"
+            />
+          </div>
+          <div class="field">
+            <label>Logo URL (Optional)</label>
+            <input
+                    id="set-logo"
+                    placeholder="https://... or data:image/png;base64..."
+            />
+          </div>
+
+          <div class="field">
+            <label>Default tax mode</label>
+            <select id="set-tax-mode">
+              <option value="percent">Percentage (per-bill %)</option>
+              <option value="fixed">Fixed amount</option>
+            </select>
+          </div>
+          <div
+                  id="fixed-tax-settings"
+                  class="field"
+                  style="display:none"
+          >
+            <label>Fixed tax amount</label>
+            <input type="number" id="set-fixed-tax" value="0" />
+          </div>
+          <div class="field">
+            <label>Default tax % (if percent mode)</label>
+            <input type="number" id="set-tax-percent" value="0" />
+          </div>
+          <button class="btn btn-primary" id="btn-save-settings">
+            <i class="fa fa-save"></i> Save Info
+          </button>
+        </div>
+
+        <div
+                class="panel col"
+                style="max-width:300px; border-color:var(--danger)"
+        >
+          <h3 class="text-danger">Danger Zone</h3>
+          <p>This will wipe all sales, items, and accounts.</p>
+          <button class="btn btn-danger" id="btn-hard-reset">
+            <i class="fa fa-warning"></i> HARD RESET (Pass: 1234)
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- CUSTOMER SCREEN (RIGHT PANEL) -->
+<div
+        id="customer-display"
+        class="hidden customer-screen"
+>
+  <div class="customer-inner">
+    <h3>Customer Screen</h3>
+    <div id="cust-d-type" class="cust-block"></div>
+    <div id="cust-d-items" class="cust-block cust-items"></div>
+    <div id="cust-d-summary" class="cust-block"></div>
+    <div id="cust-d-pay" class="cust-block"></div>
+    <button class="btn btn-sm" id="btn-close-cust-display">Close</button>
+  </div>
+</div>
+
+<!-- GENERIC REPORT MODAL -->
+<div class="modal-overlay" id="m-report">
+  <div class="modal modal-large">
+    <div class="modal-head">
+      <span id="m-report-title">Report View</span>
+      <button class="btn btn-danger" data-close-modal="m-report">X</button>
+    </div>
+    <div id="report-container" class="report-modal-body"></div>
+  </div>
+</div>
+
+<!-- ITEM MODAL -->
+<div class="modal-overlay" id="m-item">
+  <div class="modal">
+    <div class="modal-head">
+      <span id="mi-title">Item Details</span>
+      <button class="btn btn-danger" data-close-modal="m-item">X</button>
+    </div>
+    <input type="hidden" id="mi-id" />
+    <div class="row">
+      <div class="field col">
+        <label>Barcode</label>
+        <input id="mi-code" />
+      </div>
+      <div class="field col">
+        <label>Name</label>
+        <input id="mi-name" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="field col">
+        <label>Cost</label>
+        <input type="number" step="0.01" id="mi-cost" />
+      </div>
+      <div class="field col">
+        <label>Price (Base)</label>
+        <input type="number" step="0.01" id="mi-price" />
+      </div>
+    </div>
+    <div class="row">
+      <div class="field col">
+        <label>Stock (Base)</label>
+        <input type="number" id="mi-stock" />
+      </div>
+      <div class="field col">
+        <label>Low Alert</label>
+        <input type="number" id="mi-alert" value="5" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Location/Shelf</label>
+      <input id="mi-loc" />
+    </div>
+    <div
+            style="border-top:1px solid var(--border); padding-top:5px; margin-top:5px;"
+    >
+      <strong>Units & Conversion</strong>
+    </div>
+    <div class="row">
+      <div class="field col">
+        <label>Base Unit</label>
+        <select id="mi-u1"></select>
+      </div>
+      <div class="field col">
+        <label>Alt Unit</label>
+        <select id="mi-u2"></select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Base units in Alt</label>
+      <input type="number" id="mi-conv" value="1" />
+    </div>
+    <button class="btn btn-primary" id="btn-save-item">Save Item</button>
+  </div>
+</div>
+
+<!-- CUSTOMER MODAL -->
+<div class="modal-overlay" id="m-cust">
+  <div class="modal">
+    <div class="modal-head">
+      <span>New Customer</span>
+      <button class="btn btn-danger" data-close-modal="m-cust">X</button>
+    </div>
+    <div class="field">
+      <label>Name</label>
+      <input id="mc-name" />
+    </div>
+    <div class="field">
+      <label>Phone</label>
+      <input id="mc-phone" />
+    </div>
+    <div class="field">
+      <label>Type</label>
+      <select id="mc-type">
+        <option value="Walk-in">Walk-in</option>
+        <option value="Regular">Regular</option>
+        <option value="Wholesale">Wholesale</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Opening Balance (Credit)</label>
+      <input type="number" id="mc-opening" value="0" />
+    </div>
+    <button class="btn btn-primary" id="btn-save-cust">Save</button>
+  </div>
+</div>
+
+<!-- SUPPLIER MODAL -->
+<div class="modal-overlay" id="m-sup">
+  <div class="modal">
+    <div class="modal-head">
+      <span>New Supplier</span>
+      <button class="btn btn-danger" data-close-modal="m-sup">X</button>
+    </div>
+    <div class="field">
+      <label>Name</label>
+      <input id="ms-name" />
+    </div>
+    <div class="field">
+      <label>Phone</label>
+      <input id="ms-phone" />
+    </div>
+    <button class="btn btn-primary" id="btn-save-sup">Save</button>
+  </div>
+</div>
+
+<!-- BANK MODAL -->
+<div class="modal-overlay" id="m-bank">
+  <div class="modal">
+    <div class="modal-head">
+      <span>New Bank</span>
+      <button class="btn btn-danger" data-close-modal="m-bank">X</button>
+    </div>
+    <div class="field">
+      <label>Bank Name</label>
+      <input id="mb-name" />
+    </div>
+    <div class="field">
+      <label>Account No</label>
+      <input id="mb-acc" />
+    </div>
+    <div class="field">
+      <label>Initial Balance</label>
+      <input type="number" id="mb-bal" />
+    </div>
+    <button class="btn btn-primary" id="btn-save-bank">Save</button>
+  </div>
+</div>
+
+<!-- BANK TRANSACTION MODAL -->
+<div class="modal-overlay" id="m-bank-tx">
+  <div class="modal">
+    <div class="modal-head">
+      <span>Bank Transaction</span>
+      <button class="btn btn-danger" data-close-modal="m-bank-tx">X</button>
+    </div>
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="bt-date" />
+    </div>
+    <div class="field">
+      <label>Bank</label>
+      <select id="bt-bank"></select>
+    </div>
+    <div class="field">
+      <label>Type</label>
+      <select id="bt-type">
+        <option value="Deposit">Deposit</option>
+        <option value="Withdraw">Withdraw</option>
+        <option value="Adjust">Adjust</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Amount</label>
+      <input type="number" id="bt-amt" />
+    </div>
+    <button class="btn btn-primary" id="btn-save-bank-tx">Save</button>
+  </div>
+</div>
+
+<!-- EXPENSE MODAL -->
+<div class="modal-overlay" id="m-exp">
+  <div class="modal">
+    <div class="modal-head">
+      <span>New Expense</span>
+      <button class="btn btn-danger" data-close-modal="m-exp">X</button>
+    </div>
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="me-date" />
+    </div>
+    <div class="field">
+      <label>Category</label>
+      <input id="me-cat" list="dl-exp-cats" />
+      <datalist id="dl-exp-cats">
+        <option value="Rent"></option>
+        <option value="Bills"></option>
+        <option value="Salary"></option>
+        <option value="Maintenance"></option>
+      </datalist>
+    </div>
+    <div class="field">
+      <label>Description</label>
+      <input id="me-desc" />
+    </div>
+    <div class="field">
+      <label>Amount</label>
+      <input type="number" id="me-amt" />
+    </div>
+    <button class="btn btn-primary" id="btn-save-exp">Save</button>
+  </div>
+</div>
+
+<!-- EMPLOYEE MODAL (ADD/EDIT) -->
+<div class="modal-overlay" id="m-emp">
+  <div class="modal">
+    <div class="modal-head">
+      <span>Employee</span>
+      <button class="btn btn-danger" data-close-modal="m-emp">X</button>
+    </div>
+    <input type="hidden" id="me-id" />
+    <div class="field">
+      <label>Name</label>
+      <input id="me-name" />
+    </div>
+    <div class="field">
+      <label>Role</label>
+      <input id="me-role" />
+    </div>
+    <button class="btn btn-primary" id="btn-save-emp">Save</button>
+  </div>
+</div>
+
+<!-- ATTENDANCE MODAL (MARK) -->
+<div class="modal-overlay" id="m-att">
+  <div class="modal">
+    <div class="modal-head">
+      <span>Mark Attendance</span>
+      <button class="btn btn-danger" data-close-modal="m-att">X</button>
+    </div>
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="att-date" />
+    </div>
+    <div class="field">
+      <label>Employee</label>
+      <select id="att-emp"></select>
+    </div>
+    <div class="field">
+      <label>Status</label>
+      <select id="att-status">
+        <option>Present</option>
+        <option>Absent</option>
+        <option>Late</option>
+        <option>Leave</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Shift</label>
+      <select id="att-shift">
+        <option>Morning</option>
+        <option>Evening</option>
+      </select>
+    </div>
+    <button class="btn btn-primary" id="btn-save-att">Save</button>
+  </div>
+</div>
+
+<!-- CUSTOMER PAYMENT MODAL -->
+<div class="modal-overlay" id="m-cust-pay">
+  <div class="modal">
+    <div class="modal-head">
+      <span>Receive Payment (Customer)</span>
+      <button class="btn btn-danger" data-close-modal="m-cust-pay">X</button>
+    </div>
+    <div class="field">
+      <label>Customer</label>
+      <select id="cp-cust"></select>
+    </div>
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="cp-date" />
+    </div>
+    <div class="field">
+      <label>Amount</label>
+      <input type="number" id="cp-amt" />
+    </div>
+    <div class="field">
+      <label>Mode</label>
+      <select id="cp-mode">
+        <option value="Cash">Cash</option>
+        <option value="Online">Online/Bank</option>
+      </select>
+    </div>
+    <div class="field cp-bank-row hidden">
+      <label>Bank</label>
+      <select id="cp-bank"></select>
+    </div>
+    <button class="btn btn-primary" id="btn-save-cust-pay">Save</button>
+  </div>
+</div>
+
+<!-- SUPPLIER PAYMENT MODAL -->
+<div class="modal-overlay" id="m-sup-pay">
+  <div class="modal">
+    <div class="modal-head">
+      <span>Pay Supplier</span>
+      <button class="btn btn-danger" data-close-modal="m-sup-pay">X</button>
+    </div>
+    <div class="field">
+      <label>Supplier</label>
+      <select id="sp-sup"></select>
+    </div>
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="sp-date" />
+    </div>
+    <div class="field">
+      <label>Amount</label>
+      <input type="number" id="sp-amt" />
+    </div>
+    <div class="field">
+      <label>Mode</label>
+      <select id="sp-mode">
+        <option value="Cash">Cash</option>
+        <option value="Online">Online/Bank</option>
+      </select>
+    </div>
+    <div class="field sp-bank-row hidden">
+      <label>Bank</label>
+      <select id="sp-bank"></select>
+    </div>
+    <button class="btn btn-primary" id="btn-save-sup-pay">Save</button>
+  </div>
+</div>
+
+<!-- HR SEPARATE WINDOW (TAB-LIKE OVERLAY) -->
+<div class="hr-window hidden" id="hr-window">
+  <div class="hr-header">
+    <span>Employee Screen (Linked)</span>
+    <button class="btn btn-sm" id="hr-close-btn"><i class="fa fa-times"></i></button>
+  </div>
+  <div class="hr-body">
+    <div class="panel">
+      <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;">
+        <h3>Employees</h3>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-sm btn-primary" id="btn-add-emp">
+            Add Employee
+          </button>
+          <button class="btn btn-sm" id="btn-mark-att">
+            Mark Attendance
+          </button>
+        </div>
+      </div>
+      <div class="table-container reports-table-container" style="height:260px">
+        <div class="table-scroll">
+          <table class="table-tight">
+            <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Act</th>
+            </tr>
+            </thead>
+            <tbody id="emp-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="print-zone"></div>
+<script src="script.js"></script>
+</body>
+</html>
